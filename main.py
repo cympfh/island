@@ -1,13 +1,14 @@
-import random
+import collections
 import json
+import math
+import random
 from typing import List, Tuple
 
 import implicit
-from scipy.sparse import lil_matrix
 from fastapi import FastAPI, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.responses import HTMLResponse, RedirectResponse
+from scipy.sparse import lil_matrix
 
 #    cat anime.json | jq .data.searchWorks.edges[0].node
 # {
@@ -85,10 +86,17 @@ class Matrix:
 class Recommendation:
     """Recommendation has a Matrix"""
 
-    def __init__(self, limit: int = 2000):
-        """init"""
-        mat = Matrix()
+    def __init__(self, limit: int = 2000, sub_reviews: int = 1):
+        """init
+
+        limit
+            num of animes
+        sub_reviews
+            Remove Users(.reviews.length < sub_reviews)
+        """
         titles = dict()  # annictId -> title
+
+        rows = []
 
         for anime in dataset["data"]["searchWorks"]["edges"][:limit]:
             title = anime["node"]["title"]
@@ -96,10 +104,19 @@ class Recommendation:
             titles[annict_id] = title
             for review in anime["node"]["reviews"]["edges"]:
                 user = str(review["node"]["user"]["id"])
-                mat.insert(annict_id, user, 1)
+                rows.append((annict_id, user))
+
+        count_reviews = collections.defaultdict(int)
+        for _, user in rows:
+            count_reviews[user] += 1
+
+        mat = Matrix()
+        for annict_id, user in rows:
+            if count_reviews[user] >= sub_reviews:
+                mat.insert(annict_id, user, math.pow(count_reviews[user], 0.5))
 
         mat.stat()
-        mat.decomposition(factors=100)
+        mat.decomposition(factors=40)
 
         self.mat = mat
         self.titles = titles
@@ -128,7 +145,7 @@ class Recommendation:
         ][:n]
 
 
-recommender = Recommendation()
+recommender = Recommendation(limit=1500, sub_reviews=5)
 app = FastAPI()
 
 origins = [
