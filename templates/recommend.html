@@ -1,0 +1,61 @@
+<html>
+  <head>
+    <title>今日のアニメ</title>
+    <meta property="og:url" content="http://cympfh.cc/anime">
+    <meta property="og:title" content="今日のアニメ" />
+    <meta property="og:description" content="cympfh.cc/anime" />
+    <meta property="og:image" content="http://cympfh.cc/resources/img/identicon.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@cympfh" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- dev
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    -->
+    <!-- prod
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+  </head>
+  <body>
+
+    <div class="section">
+      <section class="hero">
+        <div class="hero-body">
+          <div class="container">
+            <h1 class="title">Today's Your Anime</h1>
+            <p class="has-text-right">
+            <span class="socialshare">
+              <a href="https://twitter.com/share" class="twitter-share-button" data-text="Today's Your Anime" data-size="large" data-count="none">Tweet</a> <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+            </span>
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="section">
+      <div class="container">
+        <div class="tabs">
+          <ul>
+            <li><a href="/anime/">Anime Graph</a></li>
+            <li class="is-active"><a>Recommend</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="container">
+        <div class="notification is-primary">
+          <button class="delete"></button>
+          Hint:
+          <pre><code>curl /anime/api/recommend?likes=1205</code></pre>
+        </div>
+      </div>
+    </div>
+
+
+  </body>
+</html>
