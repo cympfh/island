@@ -90,7 +90,7 @@
                   <tr v-for="anime in recommended">
                     <td>
                       <a v-bind:href="'https://annict.jp/works/' + anime.annictId"><i class="fa fa-plane" aria-hidden="true"></i></a>
-                      {{ anime.title }}
+                      <a v-bind:href="'/anime/' + anime['annictId']">{{ anime.title }}</a>
                     </td>
                     <td>{{ anime.score }}</td>
                   </tr>
