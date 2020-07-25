@@ -193,7 +193,11 @@ async def recommend(likes: List[str] = Query(None)):
     """
     if likes is None:
         aids = random.sample(recommender.mat.rows, 20)
-        return [{"annictId": aid, "title": recommender.title(aid)} for aid in aids]
+        return {
+            "items": [
+                {"annictId": aid, "title": recommender.title(aid)} for aid in aids
+            ]
+        }
 
     user_items = lil_matrix((1, len(recommender.mat.rows)))
     for annict_id in likes:

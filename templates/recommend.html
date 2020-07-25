@@ -39,6 +39,69 @@
           </ul>
         </div>
       </div>
+
+      <div id="recommend">
+        <div class="container">
+          <div class="columns">
+
+            <!-- sources -->
+            <div class="column">
+              <table class="table is-fullwidth">
+                <thead>
+                  <tr>
+                    <td>Rate Animes</td>
+                    <td>Like?</td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="anime in sources">
+                    <td>
+                      <a v-bind:href="'https://annict.jp/works/' + anime.annictId"><i class="fa fa-plane" aria-hidden="true"></i></a>
+                      {{ anime.title }}
+                    </td>
+                    <td>
+                      <div class="control">
+                        <label class="checkbox">
+                          <input type="checkbox"
+                            v-bind:value="anime.annictId"
+                            v-bind:id="anime.annictId"
+                            v-on:change="change"
+                            v-model="likes"
+                          />
+                          <i class="fa fa-heart" aria-hidden="true"></i>
+                        </label>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- recommended -->
+            <div class="column">
+              <table class="table is-fullwidth">
+                <thead>
+                  <tr>
+                    <td>Recommended</td>
+                    <td>score</td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="anime in recommended">
+                    <td>
+                      <a v-bind:href="'https://annict.jp/works/' + anime.annictId"><i class="fa fa-plane" aria-hidden="true"></i></a>
+                      {{ anime.title }}
+                    </td>
+                    <td>{{ anime.score }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div class="section">
@@ -51,6 +114,34 @@
       </div>
     </div>
 
+
+    <script>
+      var recommend = new Vue({
+        el: '#recommend',
+        data: {
+          sources: [],
+          likes: [],
+          recommended: []
+        },
+        created() {
+          fetch(`http://${location.host}/anime/api/recommend`)
+            .then(response => response.json())
+            .then(json => {
+              this.sources = json['items'];
+            });
+        },
+        methods: {
+          change: function () {
+            var params = this.likes.map(aid => `likes=${aid}`).join('&');
+            fetch(`http://${location.host}/anime/api/recommend?${params}`)
+              .then(response => response.json())
+              .then(json => {
+                this.recommended = json['items'];
+              });
+          }
+        }
+      })
+    </script>
 
   </body>
 </html>
