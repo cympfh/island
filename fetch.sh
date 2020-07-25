@@ -27,5 +27,5 @@ curl https://api.annict.com/graphql \
                 }
             }
         }
-}
+    }
 }"

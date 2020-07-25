@@ -32,72 +32,72 @@
       </div>
 
       <div class="container">
-        <div class="tabs">
+        <div class="tabs is-boxed">
           <ul>
             <li><a href="/anime/">Anime Graph</a></li>
             <li class="is-active"><a>Recommend</a></li>
           </ul>
         </div>
-      </div>
 
-      <div id="recommend">
-        <div class="container">
-          <div class="columns">
+        <div id="recommend">
+          <div class="container">
+            <div class="columns">
 
-            <!-- sources -->
-            <div class="column">
-              <table class="table is-fullwidth">
-                <thead>
-                  <tr>
-                    <td>Rate Animes</td>
-                    <td>Like?</td>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="anime in sources">
-                    <td>
-                      <a v-bind:href="'https://annict.jp/works/' + anime.annictId"><i class="fa fa-plane" aria-hidden="true"></i></a>
-                      {{ anime.title }}
-                    </td>
-                    <td>
-                      <div class="control">
-                        <label class="checkbox">
-                          <input type="checkbox"
-                            v-bind:value="anime.annictId"
-                            v-bind:id="anime.annictId"
-                            v-on:change="change"
-                            v-model="likes"
-                          />
-                          <i class="fa fa-heart" aria-hidden="true"></i>
-                        </label>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <!-- sources -->
+              <div class="column">
+                <table class="table is-fullwidth">
+                  <thead>
+                    <tr>
+                      <td>Rate Animes</td>
+                      <td>Like? <i class="fa fa-hand-o-right" aria-hidden="true"></i></td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="anime in sources">
+                      <td>
+                        {{ anime.title }}
+                      </td>
+                      <td>
+
+                        <div class="control">
+                          <label class="checkbox" style="color: #ccc">
+                            <input type="checkbox"
+                                   v-bind:value="anime.annictId"
+                                   v-bind:id="anime.annictId"
+                                   v-on:change="change"
+                                   v-model="likes"
+                                   />
+                            <i class="fa fa-heart" aria-hidden="true"></i>
+                          </label>
+                        </div>
+
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- recommended -->
+              <div class="column">
+                <table class="table is-fullwidth">
+                  <thead>
+                    <tr>
+                      <td>Recommended</td>
+                      <td>score</td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="anime in recommended">
+                      <td>
+                        <a v-bind:href="'/anime/' + anime['annictId']">{{ anime.title }}</a>
+                      </td>
+                      <td>{{ anime.score }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
             </div>
-
-            <!-- recommended -->
-            <div class="column">
-              <table class="table is-fullwidth">
-                <thead>
-                  <tr>
-                    <td>Recommended</td>
-                    <td>score</td>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="anime in recommended">
-                    <td>
-                      <a v-bind:href="'https://annict.jp/works/' + anime.annictId"><i class="fa fa-plane" aria-hidden="true"></i></a>
-                      <a v-bind:href="'/anime/' + anime['annictId']">{{ anime.title }}</a>
-                    </td>
-                    <td>{{ anime.score }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
           </div>
         </div>
       </div>
@@ -138,6 +138,12 @@
               .then(json => {
                 this.recommended = json['items'];
               });
+            for (var id of this.sources) {
+              document.getElementById(id.annictId).parentElement.style.color = '#ccc';
+            }
+            for (var id of this.likes) {
+              document.getElementById(id).parentElement.style.color = '#dd5555';
+            }
           }
         }
       })

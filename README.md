@@ -21,7 +21,7 @@ TOKEN=... bash ./fetch.sh > anime.json
 ### Lanch Server
 
 Recommendation Model be fitted at first.
-This may take 1 min at most.
+This may take only several seconds.
 
 ```bash
 pip isntall -r requirements.txt
