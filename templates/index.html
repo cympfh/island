@@ -92,7 +92,7 @@
           relatives: []
         },
         created() {
-          fetch(`http://localhost:8080/anime/api/info?annict_id=${annict_id}`)
+          fetch(`http://${location.host}/anime/api/info?annict_id=${annict_id}`)
             .then(response => response.json())
             .then(json => {
               this.title = json["title"];
@@ -139,7 +139,7 @@
             }
           }
 
-          fetch(`http://localhost:8080/anime/api/info?annict_id=${annict_id}`)
+          fetch(`http://${location.host}/anime/api/info?annict_id=${annict_id}`)
             .then(response => response.json())
             .then(json => {
 
@@ -156,7 +156,7 @@
               var network = new vis.Network(container, this.data, this.options);
 
               for (var child of json["relatives"].slice(0, degree_first)) {
-                fetch(`http://localhost:8080/anime/api/info?annict_id=${child['annictId']}`)
+                fetch(`http://${location.host}/anime/api/info?annict_id=${child['annictId']}`)
                   .then(response => response.json())
                   .then(json => {
                     var aid = json["annictId"] | 0;
