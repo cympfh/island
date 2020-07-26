@@ -5,7 +5,7 @@ import random
 from typing import List, Tuple
 
 import implicit
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 from scipy.sparse import lil_matrix
@@ -128,6 +128,10 @@ class Recommendation:
         self.titles = titles
         self.images = images
 
+    def isknown(self, annict_id: str) -> bool:
+        """Known Anime?"""
+        return annict_id in self.titles
+
     def title(self, annict_id: str) -> str:
         """Anime Title"""
         return self.titles.get(annict_id, "UNKNOWN")
@@ -178,6 +182,8 @@ app.add_middleware(
 @app.get("/anime/api/info")
 async def anime_info(annict_id: str):
     """Returns Info"""
+    if not recommender.isknown(annict_id):
+        raise HTTPException(status_code=404, detail="Item not found")
     relatives = recommender.similar_items(annict_id, 10)
     return {
         "annictId": annict_id,
@@ -218,8 +224,9 @@ async def recommend(likes: List[str] = Query(None)):
 
     user_items = lil_matrix((1, len(recommender.mat.rows)))
     for annict_id in likes:
-        i = recommender.mat.row_id[annict_id]
-        user_items[(0, i)] = 1.0
+        if recommender.isknown(annict_id):
+            i = recommender.mat.row_id[annict_id]
+            user_items[(0, i)] = 1.0
     recommend_items = recommender.mat.fact.recommend(
         0,
         user_items.tocsr(),
@@ -263,6 +270,8 @@ async def index_random():
 @app.get("/anime/{annict_id}", response_class=HTMLResponse)
 async def index_anime_graph(annict_id: str):
     """Index for Each Anime"""
+    if not recommender.isknown(annict_id):
+        raise HTTPException(status_code=404, detail="Item not found")
     with open("./templates/anime.html", "rt") as f:
         return f.read()
 
