@@ -62,6 +62,32 @@ class Matrix:
             f"{len(self.data)} cells have non-zero values (density={len(self.data) / len(self.rows) / len(self.cols)})"
         )
 
+    def recommend(self, likes: List[str]) -> List[str]:
+        """Run Recommendation
+
+        Parameters
+        ----------
+        likes
+            List of annict_id
+
+        Returns
+        -------
+        List of annict_id
+        """
+        user_items = lil_matrix((1, len(self.rows)))
+        for annict_id in likes:
+            if annict_id in self.row_id:
+                i = self.row_id[annict_id]
+                user_items[(0, i)] = 1.2
+        recommend_items = self.fact.recommend(
+            0,
+            user_items.tocsr(),
+            20,
+            filter_already_liked_items=True,
+            recalculate_user=True,
+        )
+        return [(self.rows[int(i)], float(score)) for i, score in recommend_items]
+
 
 class Recommendation:
     """Recommendation has a Matrix"""
@@ -163,6 +189,10 @@ class Recommendation:
             if int(j) != i
         ][:n]
 
+    def __call__(self, likes: List[str]) -> List[str]:
+        """Alias"""
+        return self.mat.recommend(likes)
+
 
 recommender = Recommendation(limit=1500, sub_reviews=5)
 app = FastAPI()
@@ -226,27 +256,16 @@ async def recommend(likes: List[str] = Query(None)):
             ]
         }
 
-    user_items = lil_matrix((1, len(recommender.mat.rows)))
-    for annict_id in likes:
-        if recommender.isknown(annict_id):
-            i = recommender.mat.row_id[annict_id]
-            user_items[(0, i)] = 1.2
-    recommend_items = recommender.mat.fact.recommend(
-        0,
-        user_items.tocsr(),
-        20,
-        filter_already_liked_items=True,
-        recalculate_user=True,
-    )
+    recommend_items = recommender(likes)
     return {
         "items": [
             {
-                "annictId": recommender.mat.rows[int(i)],
-                "title": recommender.title(recommender.mat.rows[int(i)]),
-                "image": recommender.image(recommender.mat.rows[int(i)]),
+                "annictId": annict_id,
+                "title": recommender.title(annict_id),
+                "image": recommender.image(annict_id),
                 "score": float(score),
             }
-            for i, score in recommend_items
+            for annict_id, score in recommend_items
         ],
         "source": {
             "likes": [
