@@ -68,10 +68,9 @@
           </div>
 
           <div class="column">
-              <div class="container has-text-right">
-                <a href="/anime/random"><i class="fa fa-refresh" aria-hidden="true"></i>&nbsp;Random</a>
-              </div>
-
+            <div class="container has-text-right">
+              <a href="/anime/random"><i class="fa fa-refresh" aria-hidden="true"></i>&nbsp;Random</a>
+            </div>
             <div id="graph"></div>
           </div>
 
@@ -102,7 +101,7 @@
     </script>
 
     <script type="text/javascript">
-      var degree_first = 6;
+      // var degree_first = 6;
       var degree_second = 4;
       var graph = new Vue({
         el: '#graph',
@@ -121,48 +120,38 @@
         },
         created() {
 
-          var addNode = (annict_id, title) => {
-            if (!this.used_node_ids.has(annict_id)) {
-              this.used_node_ids.add(annict_id);
-              this.data.nodes._addItem({id: annict_id, label: title});
+          var addNode = (node) => {
+            if (!this.used_node_ids.has(node.annictId)) {
+              this.used_node_ids.add(node.annictId);
+              this.data.nodes._addItem({id: node.annictId, label: node.title});
             }
           }
 
-          var addEdge = (id1, id2) => {
-          if (id1 > id2) return addEdge(id2, id1);
-            var hashkey = id1 * 99999 + id2;
-            var edge = {from: id1, to: id2};
+          var addEdge = (u, v) => {
+            if (u.annictId > v.annictId) return addEdge(v, u);
+            var hashkey = (u.annictId | 0) * 99999 + (v.annictId | 0);
             if (!this.used_edged.has(hashkey)) {
+              addNode(u);
+              addNode(v);
               this.used_edged.add(hashkey);
-              this.data.edges._addItem(edge)
+              this.data.edges._addItem({from: u.annictId, to: v.annictId});
             }
           }
 
           fetch(`http://${location.host}/anime/api/info?annict_id=${annict_id}`)
             .then(response => response.json())
-            .then(json => {
+            .then(root => {
 
               var container = document.getElementById('graph');
 
-              var aid = json["annictId"] | 0;
-              addNode(aid, json['title']);
-
-              for (var child of json["relatives"].slice(0, degree_first)) {
-                var cid = child["annictId"] | 0;
-                addNode(cid, child['title']);
-                addEdge(aid, cid);
-              }
-              var network = new vis.Network(container, this.data, this.options);
-
-              for (var child of json["relatives"].slice(0, degree_first)) {
-                fetch(`http://${location.host}/anime/api/info?annict_id=${child['annictId']}`)
+              for (var neigh_first of root.relatives) {
+                if (this.data.nodes.length > 20) break;
+                fetch(`http://${location.host}/anime/api/info?annict_id=${neigh_first.annictId}`)
                   .then(response => response.json())
-                  .then(json => {
-                    var aid = json["annictId"] | 0;
-                    for (var child of json["relatives"].slice(0, degree_second)) {
-                      var cid = child["annictId"] | 0;
-                      addNode(cid, child['title']);
-                      addEdge(aid, cid);
+                  .then(neigh_first => {
+                    addEdge(root, neigh_first);
+                    for (var neigh_second of neigh_first.relatives.slice(0, degree_second)) {
+                      addEdge(neigh_first, neigh_second);
                     }
                     network = new vis.Network(container, this.data, this.options);
                     network.on('doubleClick', (e) => {
