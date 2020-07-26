@@ -5,30 +5,68 @@ if [ -z "$TOKEN" ]; then
     exit 1
 fi
 
-curl https://api.annict.com/graphql \
-    -H "Authorization: bearer $TOKEN" \
-    -X POST \
-    -d "query={
-    searchWorks(orderBy: { field: WATCHERS_COUNT, direction: DESC }, first: 1800) {
-        edges {
-            node {
-                annictId
-                title
-                watchersCount
-                reviews {
-                    edges {
-                        node {
-                            user {
-                                name
-                                id
-                            }
-                        }
-                    }
-                }
-                image {
-                    recommendedImageUrl
-                }
-            }
-        }
-    }
-}"
+mkdir -p dataset
+
+get() {
+    curl -s -XGET "https://api.annict.com$1"
+}
+
+fetch-records() {
+    : > dataset/records.csv
+    TMP=$(mktemp)
+    for page in $(seq 1 2732472); do
+        echo "Records: Page $page"
+        get "/v1/records?access_token=${TOKEN}&page=${page}&per_page=50&fields=user.id,work.id,rating_state" |
+            jq -r '.records[] | "\(.work.id)\t\(.user.id)\t\(.rating_state)"' > $TMP
+        if [ -s $TMP ]; then
+            cat $TMP >> dataset/records.csv
+        else
+            rm $TMP
+            break
+        fi
+    done
+}
+
+fetch-reviews() {
+    : > dataset/reviews.csv
+    TMP=$(mktemp)
+    for page in $(seq 1 26474); do
+        echo "Reviews: Page $page"
+        get "/v1/reviews?access_token=${TOKEN}&page=${page}&per_page=50&fields=work.id,user.id,rating_overall_state" |
+            jq -r '.reviews[] | "\(.work.id)\t\(.user.id)\t\(.rating_overall_state)"' > $TMP
+        if [ -s $TMP ]; then
+            cat $TMP >> dataset/reviews.csv
+        else
+            rm $TMP
+            break
+        fi
+    done
+}
+
+fetch-works() {
+    : > dataset/works.csv
+    TMP=$(mktemp)
+    for page in $(seq 1 7347); do
+        echo "Works: Page $page"
+        get "/v1/works?access_token=${TOKEN}&page=${page}&per_page=50&fields=id,title,images" |
+            jq -r '.works[] | "\(.id)\t\(.images.recommended_url)\t\(.title)"' > $TMP
+        if [ -s $TMP ]; then
+            cat $TMP >> dataset/works.csv
+        else
+            rm $TMP
+            break
+        fi
+    done
+}
+
+case "$1" in
+    work* )
+        fetch-works
+        ;;
+    review* )
+        fetch-reviews
+        ;;
+    # record* )
+    #     fetch-records
+    #     ;;
+esac

@@ -1,4 +1,4 @@
-.PHONY: default dataset processing
+.PHONY: default server dataset dataset-works dataset-reviews
 
 default:
 	cat Makefile
@@ -6,5 +6,13 @@ default:
 server:
 	OPENBLAS_NUM_THREADS=1 uvicorn main:app --reload --port 8080
 
-dataset:
-	bash ./fetch.sh > anime.json
+dataset: dataset-works dataset-reviews dataset-records
+
+dataset-works:
+	bash ./fetch.sh works
+
+dataset-reviews:
+	bash ./fetch.sh reviews
+
+dataset-records:
+	bash ./fetch.sh records

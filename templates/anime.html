@@ -49,7 +49,7 @@
             <div id="gacha">
 
               <div class="container mb-1" v-if="image">
-                <img v-bind:src="image" />
+                <img style="max-height: 30vh" v-bind:src="image" />
               </div>
 
               <h2 class="subtitle">
@@ -85,7 +85,7 @@
             <div class="container has-text-right">
               <a href="/anime/random"><i class="fa fa-refresh" aria-hidden="true"></i>&nbsp;Random</a>
             </div>
-            <div id="graph"></div>
+            <div style="max-height: 65vh;" id="graph"></div>
           </div>
 
         </div>
@@ -134,7 +134,7 @@
             edges: new vis.DataSet([]),
           },
           options: {
-            autoResize: false,
+            autoResize: true,
             width: '100%',
             height: '94%'
           }
@@ -184,6 +184,7 @@
               }
             });
         }
+
       });
     </script>
 

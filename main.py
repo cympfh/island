@@ -1,6 +1,4 @@
 import collections
-import json
-import math
 import random
 from typing import List, Tuple
 
@@ -9,24 +7,6 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 from scipy.sparse import lil_matrix
-
-#    cat anime.json | jq .data.searchWorks.edges[0].node
-# {
-#   "annictId": 2108,
-#   "title": "魔法少女まどか☆マギカ",
-#   "watchersCount": 7259,
-#   "reviews": {
-#     "edges": [
-#       {
-#         "node": {
-#           "user": {
-#             "name": "チェン",
-#             "id": "VXNlci0xNDQwNg=="
-#           }
-#         }
-
-with open("./anime.json") as f:
-    dataset = json.load(f)
 
 
 class Matrix:
@@ -97,29 +77,53 @@ class Recommendation:
         titles = dict()  # annictId -> title
         images = dict()  # annict_id -> ImageUrl
 
-        rows = []
+        with open("./dataset/works.csv") as f:
+            for line in f:
+                annict_id, image, title = line.strip("\n").split("\t", 2)
+                titles[annict_id] = title
+                images[annict_id] = image
 
-        for animeConnection in dataset["data"]["searchWorks"]["edges"][:limit]:
-            anime = animeConnection["node"]
-            title = anime["title"]
-            annict_id = str(anime["annictId"])
-            titles[annict_id] = title
-            images[annict_id] = "UNKNOWN"
-            if anime.get("image", None) is not None:
-                images[annict_id] = anime.get("image").get("recommendedImageUrl", "UNKNOWN")
-            for reviewConnection in anime["reviews"]["edges"]:
-                review = reviewConnection["node"]
-                user = str(review["user"]["id"])
-                rows.append((annict_id, user))
+        rows = []  # List of (annict_id, user_id, rating)
+        count_anime = collections.defaultdict(int)  # annict_id -> count
+        count_user = collections.defaultdict(int)  # user_id -> count
 
-        count_reviews = collections.defaultdict(int)
-        for _, user in rows:
-            count_reviews[user] += 1
+        def rate(rating: str) -> float:
+            if rating == "bad":
+                return -1
+            if rating == "good":
+                return 1
+            if rating == "great":
+                return 2
+            return 0.5
+
+        # if os.path.exists("./dataset/records.csv"):
+        #     with open("./dataset/records.csv") as f:
+        #         for line in f:
+        #             annict_id, user_id, rating = line.strip("\n").split(
+        #                 " ", 2
+        #             )  # TODO delimiter!
+        #             if rating == "null":
+        #                 continue
+        #             count_user[user_id] += 1
+        #             rows.append((annict_id, user_id, rate(rating) * 0.2))
+
+        with open("./dataset/reviews.csv") as f:
+            for line in f:
+                annict_id, user_id, rating = line.strip("\n").split("\t", 2)
+                count_anime[annict_id] += 1
+                count_user[user_id] += 1
+                rows.append((annict_id, user_id, rate(rating)))
 
         mat = Matrix()
-        for annict_id, user in rows:
-            if count_reviews[user] >= sub_reviews:
-                mat.insert(annict_id, user, math.pow(count_reviews[user], 0.5))
+
+        LIMIT_ANIME = 1
+        LIMIT_USER = 4
+        for annict_id, user_id, ratevalue in rows:
+            if count_anime[annict_id] < LIMIT_ANIME:
+                continue
+            if count_user[user_id] < LIMIT_USER:
+                continue
+            mat.insert(annict_id, user_id, ratevalue)
 
         mat.stat()
         mat.decomposition(factors=40)
@@ -130,7 +134,7 @@ class Recommendation:
 
     def isknown(self, annict_id: str) -> bool:
         """Known Anime?"""
-        return annict_id in self.titles
+        return annict_id in self.mat.row_id
 
     def title(self, annict_id: str) -> str:
         """Anime Title"""
@@ -226,7 +230,7 @@ async def recommend(likes: List[str] = Query(None)):
     for annict_id in likes:
         if recommender.isknown(annict_id):
             i = recommender.mat.row_id[annict_id]
-            user_items[(0, i)] = 1.0
+            user_items[(0, i)] = 1.2
     recommend_items = recommender.mat.fact.recommend(
         0,
         user_items.tocsr(),

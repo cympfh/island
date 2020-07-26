@@ -126,18 +126,22 @@
         },
         methods: {
           change: function () {
-            var params = this.likes.map(aid => `likes=${aid}`).join('&');
-            fetch(`http://${location.host}/anime/api/recommend?${params}`)
-              .then(response => response.json())
-              .then(json => {
-                this.recommended = json['items'];
-              });
             for (var id of this.sources) {
               document.getElementById(id.annictId).parentElement.style.color = '#ccc';
             }
             for (var id of this.likes) {
               document.getElementById(id).parentElement.style.color = '#dd5555';
             }
+            if (this.likes.length === 0) {
+              this.recommended = [];
+              return;
+            }
+            var params = this.likes.map(aid => `likes=${aid}`).join('&');
+            fetch(`http://${location.host}/anime/api/recommend?${params}`)
+              .then(response => response.json())
+              .then(json => {
+                this.recommended = json['items'];
+              });
           }
         }
       })
