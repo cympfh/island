@@ -12,11 +12,13 @@ Anime Recommendation powerd by Annict
 
 This step can be skipped (if you don't need update).
 
-Get Access Token from https://annict.jp/settings/apps
+Get Access Token from https://annict.jp/settings/apps . Then,
 
 ```bash
-TOKEN=... bash ./fetch.sh > anime.json
+TOKEN=XXX bash ./fetch.sh > anime.json
 ```
+
+_NOTE_: All you need is backup. This fetching sometimes fails.
 
 ### Lanch Server
 
