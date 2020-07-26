@@ -58,7 +58,9 @@
                   <tbody>
                     <tr v-for="anime in sources">
                       <td>
-                        {{ anime.title }}
+                        <label v-bind:for="anime.annictId">
+                          {{ anime.title }}
+                        </label>
                       </td>
                       <td>
 
