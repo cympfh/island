@@ -78,7 +78,7 @@ class Matrix:
         for annict_id in likes:
             if annict_id in self.row_id:
                 i = self.row_id[annict_id]
-                user_items[(0, i)] = 1.2
+                user_items[(0, i)] = 2.0
         recommend_items = self.fact.recommend(
             0,
             user_items.tocsr(),
@@ -119,19 +119,8 @@ class Recommendation:
             if rating == "good":
                 return 1
             if rating == "great":
-                return 2
+                return 4
             return 0.5
-
-        # if os.path.exists("./dataset/records.csv"):
-        #     with open("./dataset/records.csv") as f:
-        #         for line in f:
-        #             annict_id, user_id, rating = line.strip("\n").split(
-        #                 " ", 2
-        #             )  # TODO delimiter!
-        #             if rating == "null":
-        #                 continue
-        #             count_user[user_id] += 1
-        #             rows.append((annict_id, user_id, rate(rating) * 0.2))
 
         with open("./dataset/reviews.csv") as f:
             for line in f:
@@ -152,7 +141,7 @@ class Recommendation:
             mat.insert(annict_id, user_id, ratevalue)
 
         mat.stat()
-        mat.decomposition(factors=40)
+        mat.decomposition(factors=100)
 
         self.mat = mat
         self.titles = titles
