@@ -235,22 +235,28 @@ async def index_recommend():
         return f.read()
 
 
+@app.get("/anime/random", response_class=RedirectResponse)
+async def index_random():
+    """Redirect to Random /anime/{annict_id}"""
+    annict_id = recommender.random_anime()
+    return RedirectResponse(f"/anime/{annict_id}")
+
+
 @app.get("/anime/{annict_id}", response_class=HTMLResponse)
-async def index_anime(annict_id: str):
+async def index_anime_graph(annict_id: str):
     """Index for Each Anime"""
-    with open("./templates/index.html", "rt") as f:
+    with open("./templates/anime.html", "rt") as f:
         return f.read()
 
 
 @app.get("/", response_class=RedirectResponse)
 async def index():
-    """Index: Redirect to Random Anime"""
-    annict_id = recommender.random_anime()
-    return RedirectResponse(f"/anime/{annict_id}")
+    """Redirect to /anime"""
+    return RedirectResponse("/anime")
 
 
-@app.get("/anime", response_class=RedirectResponse)
-async def index2():
-    """Index: Redirect to Random Anime"""
-    annict_id = recommender.random_anime()
-    return RedirectResponse(f"/anime/{annict_id}")
+@app.get("/anime", response_class=HTMLResponse)
+async def index_anime():
+    """Index of All"""
+    with open("./templates/index.html", "rt") as f:
+        return f.read()
