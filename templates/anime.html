@@ -1,6 +1,7 @@
 <html>
   <head>
     <title>今日のアニメ</title>
+    <meta name="description" content="アニメレコメンド" />
     <meta property="og:url" content="http://cympfh.cc/anime">
     <meta property="og:title" content="今日のアニメ" />
     <meta property="og:description" content="アニメレコメンド" />
@@ -54,7 +55,11 @@
                 </a>
               </h2>
 
+              <div class="container" v-if="image != '' && image != 'UNKNOWN'">
+                <img v-bind:src="image" />
+              </div>
 
+              <div class="container mt-4">
               <aside class="menu">
                 <p class="menu-label">10 Relatives</p>
                 <ul class="menu-list" v-for="anime in relatives">
@@ -63,6 +68,7 @@
                   </li>
                 </ul>
               </aside>
+              </div>
 
             </div>
           </div>
@@ -85,6 +91,7 @@
         el: '#gacha',
         data: {
           title: "",
+          image: "",
           annictId: annict_id,
           relatives: []
         },
@@ -93,6 +100,7 @@
             .then(response => response.json())
             .then(json => {
               this.title = json["title"];
+              this.image = json["image"];
               this.annictId = json["annictId"];
               this.relatives = json["relatives"];
             });

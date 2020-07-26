@@ -9,7 +9,7 @@ curl https://api.annict.com/graphql \
     -H "Authorization: bearer $TOKEN" \
     -X POST \
     -d "query={
-    searchWorks(orderBy: { field: WATCHERS_COUNT, direction: DESC }, first: 2000) {
+    searchWorks(orderBy: { field: WATCHERS_COUNT, direction: DESC }, first: 1800) {
         edges {
             node {
                 annictId
@@ -24,6 +24,9 @@ curl https://api.annict.com/graphql \
                             }
                         }
                     }
+                }
+                image {
+                    recommendedImageUrl
                 }
             }
         }

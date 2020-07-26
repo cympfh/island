@@ -95,15 +95,21 @@ class Recommendation:
             Remove Users(.reviews.length < sub_reviews)
         """
         titles = dict()  # annictId -> title
+        images = dict()  # annict_id -> ImageUrl
 
         rows = []
 
-        for anime in dataset["data"]["searchWorks"]["edges"][:limit]:
-            title = anime["node"]["title"]
-            annict_id = str(anime["node"]["annictId"])
+        for animeConnection in dataset["data"]["searchWorks"]["edges"][:limit]:
+            anime = animeConnection["node"]
+            title = anime["title"]
+            annict_id = str(anime["annictId"])
             titles[annict_id] = title
-            for review in anime["node"]["reviews"]["edges"]:
-                user = str(review["node"]["user"]["id"])
+            images[annict_id] = "UNKNOWN"
+            if anime.get("image", None) is not None:
+                images[annict_id] = anime.get("image").get("recommendedImageUrl", "UNKNOWN")
+            for reviewConnection in anime["reviews"]["edges"]:
+                review = reviewConnection["node"]
+                user = str(review["user"]["id"])
                 rows.append((annict_id, user))
 
         count_reviews = collections.defaultdict(int)
@@ -120,10 +126,15 @@ class Recommendation:
 
         self.mat = mat
         self.titles = titles
+        self.images = images
 
     def title(self, annict_id: str) -> str:
         """Anime Title"""
         return self.titles.get(annict_id, "UNKNOWN")
+
+    def image(self, annict_id: str) -> str:
+        """Anime Image Url"""
+        return self.images.get(annict_id, "UNKNOWN")
 
     def random_anime(self) -> str:
         """Returns random annictId"""
@@ -171,6 +182,7 @@ async def anime_info(annict_id: str):
     return {
         "annictId": annict_id,
         "title": recommender.title(annict_id),
+        "image": recommender.image(annict_id),
         "relatives": [
             {
                 "annictId": annict_id,
@@ -195,7 +207,12 @@ async def recommend(likes: List[str] = Query(None)):
         aids = random.sample(recommender.mat.rows, 20)
         return {
             "items": [
-                {"annictId": aid, "title": recommender.title(aid)} for aid in aids
+                {
+                    "annictId": aid,
+                    "title": recommender.title(aid),
+                    "image": recommender.image(aid),
+                }
+                for aid in aids
             ]
         }
 
@@ -215,6 +232,7 @@ async def recommend(likes: List[str] = Query(None)):
             {
                 "annictId": recommender.mat.rows[int(i)],
                 "title": recommender.title(recommender.mat.rows[int(i)]),
+                "image": recommender.image(recommender.mat.rows[int(i)]),
                 "score": float(score),
             }
             for i, score in recommend_items
