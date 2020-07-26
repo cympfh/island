@@ -10,21 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 from scipy.sparse import lil_matrix
 
-#    cat anime.json | jq .data.searchWorks.edges[0].node
-# {
-#   "annictId": 2108,
-#   "title": "魔法少女まどか☆マギカ",
-#   "watchersCount": 7259,
-#   "reviews": {
-#     "edges": [
-#       {
-#         "node": {
-#           "user": {
-#             "name": "チェン",
-#             "id": "VXNlci0xNDQwNg=="
-#           }
-#         }
-
 with open("./anime.json") as f:
     dataset = json.load(f)
 
@@ -99,16 +84,14 @@ class Recommendation:
 
         rows = []
 
-        for animeConnection in dataset["data"]["searchWorks"]["edges"][:limit]:
-            anime = animeConnection["node"]
+        for anime in dataset["data"]["searchWorks"]["nodes"][:limit]:
             title = anime["title"]
             annict_id = str(anime["annictId"])
             titles[annict_id] = title
             images[annict_id] = "UNKNOWN"
             if anime.get("image", None) is not None:
                 images[annict_id] = anime.get("image").get("recommendedImageUrl", "UNKNOWN")
-            for reviewConnection in anime["reviews"]["edges"]:
-                review = reviewConnection["node"]
+            for review in anime["reviews"]["nodes"]:
                 user = str(review["user"]["id"])
                 rows.append((annict_id, user))
 
