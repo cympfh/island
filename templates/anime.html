@@ -48,6 +48,10 @@
           <div class="column is-one-third">
             <div id="gacha">
 
+              <div class="container" v-if="image">
+                <img v-bind:src="image" />
+              </div>
+
               <h2 class="subtitle">
                   {{ title }}
                 <a v-bind:href="'https://annict.jp/works/' + annictId" target="_blank">
@@ -55,19 +59,23 @@
                 </a>
               </h2>
 
-              <div class="container" v-if="image != '' && image != 'UNKNOWN'">
-                <img v-bind:src="image" />
-              </div>
-
               <div class="container mt-4">
-              <aside class="menu">
-                <p class="menu-label">10 Relatives</p>
-                <ul class="menu-list" v-for="anime in relatives">
-                  <li>
-                    <a v-bind:href="'/anime/' + anime['annictId']">{{ anime["title"] }}</a>
-                  </li>
-                </ul>
-              </aside>
+                <aside class="menu" v-if="!image">
+                  <p class="menu-label">10 Relatives</p>
+                  <ul class="menu-list">
+                    <li v-for="anime in relatives">
+                      <a v-bind:href="'/anime/' + anime['annictId']">{{ anime["title"] }}</a>
+                    </li>
+                  </ul>
+                </aside>
+                <aside class="menu" v-else>
+                  <p class="menu-label">5 Relatives</p>
+                  <ul class="menu-list">
+                    <li v-for="anime in relatives_short">
+                      <a v-bind:href="'/anime/' + anime['annictId']">{{ anime["title"] }}</a>
+                    </li>
+                  </ul>
+                </aside>
               </div>
 
             </div>
@@ -93,7 +101,8 @@
           title: "",
           image: "",
           annictId: annict_id,
-          relatives: []
+          relatives: [],
+          relatives_short: []
         },
         created() {
           fetch(`http://${location.host}/anime/api/info?annict_id=${annict_id}`)
@@ -101,8 +110,12 @@
             .then(json => {
               this.title = json["title"];
               this.image = json["image"];
+              if (this.image === "" || this.image === "UNKNOWN" || this.image == null) {
+                this.image = false;
+              }
               this.annictId = json["annictId"];
               this.relatives = json["relatives"];
+              this.relatives_short = json["relatives"].slice(0, 5);
             });
         }
       })
@@ -123,7 +136,7 @@
           options: {
             autoResize: false,
             width: '100%',
-            height: '100%'
+            height: '94%'
           }
         },
         created() {
