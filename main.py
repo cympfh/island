@@ -157,6 +157,7 @@ class Recommendation:
         self.mat = mat
         self.titles = titles
         self.images = images
+        self.test()
 
     def isknown(self, annict_id: str) -> bool:
         """Known Anime?"""
@@ -192,6 +193,46 @@ class Recommendation:
     def __call__(self, likes: List[str]) -> List[str]:
         """Alias"""
         return self.mat.recommend(likes)
+
+    def test(self):
+        """Self Testing"""
+        random.seed(42)
+        sample_user_indices = random.sample(list(range(len(self.mat.cols))), 200)
+        # collect likes
+        likes = collections.defaultdict(list)
+        for (annict_idx, user_idx), rating in self.mat.data.items():
+            if user_idx not in sample_user_indices:
+                continue
+            if rating < 0:
+                continue
+            annict_id = self.mat.rows[annict_idx]
+            likes[user_idx].append(annict_id)
+        # testing
+        acc1 = 0
+        acc5 = 0
+        acc10 = 0
+        acc20 = 0
+        num = 0
+        for _ in range(5):
+            for user_idx in sample_user_indices:
+                if len(likes[user_idx]) < 3:
+                    continue
+                ans = random.choice(likes[user_idx])  # pseudo answer
+                likes[user_idx].remove(ans)  # pseudo input
+                pred = self.mat.recommend(likes[user_idx])
+                num += 1
+                if ans in [pair[0] for pair in pred[:1]]:
+                    acc1 += 1
+                if ans in [pair[0] for pair in pred[:5]]:
+                    acc5 += 1
+                if ans in [pair[0] for pair in pred[:10]]:
+                    acc10 += 1
+                if ans in [pair[0] for pair in pred[:20]]:
+                    acc20 += 1
+        print(f"Acc@1 = { acc1 / num }")
+        print(f"Acc@5 = { acc5 / num }")
+        print(f"Acc@10 = { acc10 / num }")
+        print(f"Acc@20 = { acc20 / num }")
 
 
 recommender = Recommendation(limit=1500, sub_reviews=5)
