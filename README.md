@@ -12,13 +12,22 @@ Anime Recommendation powerd by Annict
 
 This step can be skipped (if you don't need update).
 
-Get Access Token from https://annict.jp/settings/apps . Then,
+Dataset are (already) exists in `dataset/` directory.
+To update them, get Access Token from https://annict.jp/settings/apps . Then,
 
 ```bash
-TOKEN=XXX bash ./fetch.sh > anime.json
+TOKEN=XXX make dataset
 ```
 
-_NOTE_: All you need is backup. This fetching sometimes fails.
+#### dataset-works
+
+`anime_id (annict_id)` vs `imageUrl` vs `title`
+
+#### dataset-reviews
+
+Reviews are text-comments by users for anime works.
+
+`anime_id (annict_id)` vs `user_id` vs `rating`
 
 ### Lanch Server
 
