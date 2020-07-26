@@ -10,17 +10,14 @@ Anime Recommendation powerd by Annict
 
 ### Update Dataset
 
-This step can be skipped (if you don't need).
+This step can be skipped (if you don't need update).
 
 Dataset are (already) exists in `dataset/` directory.
 To update them, get Access Token from https://annict.jp/settings/apps . Then,
 
 ```bash
-TOKEN=XXX make dataset-works dataset-reviews dataset-records
+TOKEN=XXX make dataset
 ```
-
-_NOTE_ `make dataset-records` takes many hours.
-If you don't have enough time, `make` only `dataset-works` and `dataset-reviews`.
 
 #### dataset-works
 

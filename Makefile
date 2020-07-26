@@ -6,13 +6,10 @@ default:
 server:
 	OPENBLAS_NUM_THREADS=1 uvicorn main:app --reload --port 8080
 
-dataset: dataset-works dataset-reviews dataset-records
+dataset: dataset-works dataset-reviews
 
 dataset-works:
 	bash ./fetch.sh works
 
 dataset-reviews:
 	bash ./fetch.sh reviews
-
-dataset-records:
-	bash ./fetch.sh records
