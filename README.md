@@ -19,7 +19,7 @@ To update them, get Access Token from https://annict.jp/settings/apps . Then,
 TOKEN=XXX make dataset
 ```
 
-This may takes several hours (for `dataset-records`).
+This may take several hours (for `dataset-records`).
 
 ### Lanch Server
 
