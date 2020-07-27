@@ -62,14 +62,14 @@ class Matrix:
             f"{len(self.data)} cells have non-zero values (density={len(self.data) / len(self.rows) / len(self.cols)})"
         )
 
-    def recommend(self, likes: List[str], k: int) -> List[Tuple[str, float]]:
+    def recommend(self, likes: List[str], n: int) -> List[Tuple[str, float]]:
         """Run Recommendation
 
         Parameters
         ----------
         likes
             List of annict_id
-        k
+        n
             num of returns
 
         Returns
@@ -84,7 +84,7 @@ class Matrix:
         recommend_items = self.fact.recommend(
             0,
             user_items.tocsr(),
-            k,
+            n,
             filter_already_liked_items=True,
             recalculate_user=True,
         )
@@ -189,11 +189,11 @@ class Recommendation:
             if int(j) != i
         ][:n]
 
-    def __call__(self, likes: List[str], k: int) -> List[Tuple[str, float]]:
+    def __call__(self, likes: List[str], n: int) -> List[Tuple[str, float]]:
         """Alias"""
         if not any(self.isknown(annict_id) for annict_id in likes):
             return []
-        return self.mat.recommend(likes, k)
+        return self.mat.recommend(likes, n)
 
     def test(self):
         """Self Testing"""
@@ -246,10 +246,10 @@ class MixRecommendation:
             Recommendation("./dataset/records.csv", limit_anime=1, limit_user=2),
         ]
 
-    def sample_animes(self, k: int) -> List[str]:
+    def sample_animes(self, n: int) -> List[str]:
         """Returns List of annict_id"""
         i = random.randrange(len(self.children))
-        return random.sample(self.children[i].mat.rows, k)
+        return random.sample(self.children[i].mat.rows, n)
 
     def title(self, annict_id: str) -> Optional[str]:
         """anime title"""
@@ -265,9 +265,9 @@ class MixRecommendation:
             if t:
                 return t
 
-    def __call__(self, likes: List[str], k: int) -> List[Tuple[str, float]]:
+    def __call__(self, likes: List[str], n: int) -> List[Tuple[str, float]]:
         """Mixture of recommend of children"""
-        items = sum([child(likes, k) for child in self.children], [])
+        items = sum([child(likes, n) for child in self.children], [])
         items.sort(key=lambda item: item[1], reverse=True)
         used = set()
         ret = []
@@ -276,7 +276,7 @@ class MixRecommendation:
                 continue
             used.add(aid)
             ret.append((aid, score))
-        return ret[:k]
+        return ret[:n]
 
     def isknown(self, annict_id: str) -> bool:
         """is-known by any children"""
