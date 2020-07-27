@@ -19,15 +19,7 @@ To update them, get Access Token from https://annict.jp/settings/apps . Then,
 TOKEN=XXX make dataset
 ```
 
-#### dataset-works
-
-`anime_id (annict_id)` vs `imageUrl` vs `title`
-
-#### dataset-reviews
-
-Reviews are text-comments by users for anime works.
-
-`anime_id (annict_id)` vs `user_id` vs `rating`
+This may takes several hours (for `dataset-records`).
 
 ### Lanch Server
 
