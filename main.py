@@ -1,6 +1,6 @@
 import collections
 import random
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import implicit
 from fastapi import FastAPI, HTTPException, Query
@@ -50,7 +50,7 @@ class Matrix:
         for pos, val in self.data.items():
             X[pos] = val
         fact = implicit.als.AlternatingLeastSquares(factors=factors)
-        fact.fit(item_users=X, show_progress=True)
+        fact.fit(item_users=X, show_progress=False)
         self.fact = fact
 
     def stat(self):
@@ -62,13 +62,15 @@ class Matrix:
             f"{len(self.data)} cells have non-zero values (density={len(self.data) / len(self.rows) / len(self.cols)})"
         )
 
-    def recommend(self, likes: List[str]) -> List[str]:
+    def recommend(self, likes: List[str], k: int) -> List[Tuple[str, float]]:
         """Run Recommendation
 
         Parameters
         ----------
         likes
             List of annict_id
+        k
+            num of returns
 
         Returns
         -------
@@ -82,7 +84,7 @@ class Matrix:
         recommend_items = self.fact.recommend(
             0,
             user_items.tocsr(),
-            20,
+            k,
             filter_already_liked_items=True,
             recalculate_user=True,
         )
@@ -92,13 +94,19 @@ class Matrix:
 class Recommendation:
     """Recommendation has a Matrix"""
 
-    def __init__(self, limit: int = 2000, sub_reviews: int = 1):
+    def __init__(
+        self, dataset_path: str, limit_anime: int, limit_user: int,
+    ):
         """init
 
-        limit
-            num of animes
-        sub_reviews
-            Remove Users(.reviews.length < sub_reviews)
+        Parameters
+        ----------
+        dataset_path
+            File Path of csv(annict_id, user_id, rating)
+        limit_anime
+            sub limit of freq of anime
+        limit_user
+            sub limit of freq of user
         """
         titles = dict()  # annictId -> title
         images = dict()  # annict_id -> ImageUrl
@@ -122,21 +130,21 @@ class Recommendation:
                 return 4
             return 0.5
 
-        with open("./dataset/reviews.csv") as f:
+        with open(dataset_path) as f:
             for line in f:
                 annict_id, user_id, rating = line.strip("\n").split("\t", 2)
                 count_anime[annict_id] += 1
                 count_user[user_id] += 1
+                if rating == "null":
+                    continue
                 rows.append((annict_id, user_id, rate(rating)))
 
         mat = Matrix()
 
-        LIMIT_ANIME = 1
-        LIMIT_USER = 4
         for annict_id, user_id, ratevalue in rows:
-            if count_anime[annict_id] < LIMIT_ANIME:
+            if count_anime[annict_id] < limit_anime:
                 continue
-            if count_user[user_id] < LIMIT_USER:
+            if count_user[user_id] < limit_user:
                 continue
             mat.insert(annict_id, user_id, ratevalue)
 
@@ -152,17 +160,17 @@ class Recommendation:
         """Known Anime?"""
         return annict_id in self.mat.row_id
 
-    def title(self, annict_id: str) -> str:
+    def title(self, annict_id: str) -> Optional[str]:
         """Anime Title"""
-        return self.titles.get(annict_id, "UNKNOWN")
+        return self.titles.get(annict_id, None)
 
     def image(self, annict_id: str) -> str:
         """Anime Image Url"""
-        return self.images.get(annict_id, "UNKNOWN")
+        return self.images.get(annict_id, None)
 
-    def random_anime(self) -> str:
-        """Returns random annictId"""
-        return random.choice(self.mat.rows)
+    def sample_animes(self, n: int) -> str:
+        """Returns List of random annict_id"""
+        return random.sample(self.mat.rows, n)
 
     def similar_items(self, annict_id: str, n: int) -> List[Tuple[str, float]]:
         """Similar animes
@@ -171,6 +179,8 @@ class Recommendation:
         -------
         List of (annict_id: str, score: float)
         """
+        if not self.isknown(annict_id):
+            return []
         i = self.mat.row_id[annict_id]
         similars = self.mat.fact.similar_items(i, n + 1)
         return [
@@ -179,9 +189,11 @@ class Recommendation:
             if int(j) != i
         ][:n]
 
-    def __call__(self, likes: List[str]) -> List[str]:
+    def __call__(self, likes: List[str], k: int) -> List[Tuple[str, float]]:
         """Alias"""
-        return self.mat.recommend(likes)
+        if not any(self.isknown(annict_id) for annict_id in likes):
+            return []
+        return self.mat.recommend(likes, k)
 
     def test(self):
         """Self Testing"""
@@ -208,7 +220,7 @@ class Recommendation:
                     continue
                 ans = random.choice(likes[user_idx])  # pseudo answer
                 likes[user_idx].remove(ans)  # pseudo input
-                pred = self.mat.recommend(likes[user_idx])
+                pred = self.mat.recommend(likes[user_idx], 20)
                 num += 1
                 if ans in [pair[0] for pair in pred[:1]]:
                     acc1 += 1
@@ -224,7 +236,70 @@ class Recommendation:
         print(f"Acc@20 = { acc20 / num }")
 
 
-recommender = Recommendation(limit=1500, sub_reviews=5)
+class MixRecommendation:
+    """Wrapper of Recommendation"""
+
+    def __init__(self):
+        """Init child recommenders"""
+        self.children = [
+            Recommendation("./dataset/reviews.csv", limit_anime=1, limit_user=4),
+            Recommendation("./dataset/records.csv", limit_anime=1, limit_user=2),
+        ]
+
+    def sample_animes(self, k: int) -> List[str]:
+        """Returns List of annict_id"""
+        i = random.randrange(len(self.children))
+        return random.sample(self.children[i].mat.rows, k)
+
+    def title(self, annict_id: str) -> Optional[str]:
+        """anime title"""
+        for child in self.children:
+            t = child.title(annict_id)
+            if t:
+                return t
+
+    def image(self, annict_id: str) -> Optional[str]:
+        """image url"""
+        for child in self.children:
+            t = child.image(annict_id)
+            if t:
+                return t
+
+    def __call__(self, likes: List[str], k: int) -> List[Tuple[str, float]]:
+        """Interleaving of recommend of children"""
+        items = sum([child(likes, k) for child in self.children], [])
+        items.sort(key=lambda item: item[1], reverse=True)
+        used = set()
+        ret = []
+        for aid, score in items:
+            if aid in used:
+                continue
+            used.add(aid)
+            ret.append((aid, score))
+        return ret[:k]
+
+    def isknown(self, annict_id: str) -> bool:
+        """is-known by any children"""
+        for child in self.children:
+            if child.isknown(annict_id):
+                return True
+        return False
+
+    def similar_items(self, annict_id: str, n: int) -> List[Tuple[str, float]]:
+        """Interleaving of similar_items of children"""
+        items = sum([child.similar_items(annict_id, n) for child in self.children], [])
+        items.sort(key=lambda item: item[1], reverse=True)
+        used = set()
+        ret = []
+        for aid, score in items:
+            if aid in used:
+                continue
+            used.add(aid)
+            ret.append((aid, score))
+        return ret[:n]
+
+
+recommender = MixRecommendation()
 app = FastAPI()
 
 origins = [
@@ -274,7 +349,7 @@ async def recommend(likes: List[str] = Query(None)):
         List of annictId
     """
     if likes is None:
-        aids = random.sample(recommender.mat.rows, 20)
+        aids = recommender.sample_animes(20)
         return {
             "items": [
                 {
@@ -286,7 +361,7 @@ async def recommend(likes: List[str] = Query(None)):
             ]
         }
 
-    recommend_items = recommender(likes)
+    recommend_items = recommender(likes, 20)
     return {
         "items": [
             {
@@ -316,7 +391,7 @@ async def index_recommend():
 @app.get("/anime/random", response_class=RedirectResponse)
 async def index_random():
     """Redirect to Random /anime/{annict_id}"""
-    annict_id = recommender.random_anime()
+    annict_id = recommender.sample_animes(1)[0]
     return RedirectResponse(f"/anime/{annict_id}")
 
 

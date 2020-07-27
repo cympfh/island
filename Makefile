@@ -1,4 +1,4 @@
-.PHONY: default server dataset dataset-works dataset-reviews
+.PHONY: default server dataset dataset-works dataset-reviews dataset-records
 
 default:
 	cat Makefile
@@ -13,3 +13,6 @@ dataset-works:
 
 dataset-reviews:
 	bash ./fetch.sh reviews
+
+dataset-records:
+	bash ./fetch.sh records
