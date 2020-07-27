@@ -237,7 +237,7 @@ class Recommendation:
 
 
 class MixRecommendation:
-    """Wrapper of Recommendation"""
+    """Wrapper of Multiple Recommendations"""
 
     def __init__(self):
         """Init child recommenders"""
@@ -266,7 +266,7 @@ class MixRecommendation:
                 return t
 
     def __call__(self, likes: List[str], k: int) -> List[Tuple[str, float]]:
-        """Interleaving of recommend of children"""
+        """Mixture of recommend of children"""
         items = sum([child(likes, k) for child in self.children], [])
         items.sort(key=lambda item: item[1], reverse=True)
         used = set()
@@ -286,7 +286,7 @@ class MixRecommendation:
         return False
 
     def similar_items(self, annict_id: str, n: int) -> List[Tuple[str, float]]:
-        """Interleaving of similar_items of children"""
+        """Mixture of similar_items of children"""
         items = sum([child.similar_items(annict_id, n) for child in self.children], [])
         items.sort(key=lambda item: item[1], reverse=True)
         used = set()
