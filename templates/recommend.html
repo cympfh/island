@@ -78,6 +78,11 @@
 
                       </td>
                     </tr>
+                    <tr>
+                      <td>
+                        <a v-on:click="extend">more?</a>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -141,6 +146,17 @@
               .then(response => response.json())
               .then(json => {
                 this.recommended = json['items'];
+              });
+          },
+          extend: function() {
+            fetch(`http://${location.host}/anime/api/recommend`)
+              .then(response => response.json())
+              .then(json => {
+                for (var item of json.items) {
+                  if (this.sources.indexOf(item) === -1) {
+                    this.sources.push(item);
+                  }
+                }
               });
           }
         }
