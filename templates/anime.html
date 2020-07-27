@@ -110,7 +110,7 @@
             .then(json => {
               this.title = json["title"];
               this.image = json["image"];
-              if (this.image === "" || this.image === "UNKNOWN" || this.image == null) {
+              if (this.image === "" || this.image == null) {
                 this.image = false;
               }
               this.annictId = json["annictId"];

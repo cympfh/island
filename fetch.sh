@@ -14,9 +14,9 @@ get() {
 fetch-records() {
     : > dataset/records.csv
     TMP=$(mktemp)
-    for page in $(seq 1 2732472); do
+    for page in $(seq 1 179265); do
         echo "Records: Page $page"
-        get "/v1/records?access_token=${TOKEN}&page=${page}&per_page=50&fields=user.id,work.id,rating_state" |
+        get "/v1/records?access_token=${TOKEN}&page=${page}&per_page=50&filter_has_record_comment=true&fields=user.id,work.id,rating_state" |
             jq -r '.records[] | "\(.work.id)\t\(.user.id)\t\(.rating_state)"' > $TMP
         if [ -s $TMP ]; then
             cat $TMP >> dataset/records.csv
@@ -66,7 +66,7 @@ case "$1" in
     review* )
         fetch-reviews
         ;;
-    # record* )
-    #     fetch-records
-    #     ;;
+    record* )
+        fetch-records
+        ;;
 esac
