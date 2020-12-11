@@ -50,7 +50,7 @@ class Matrix:
         for pos, val in self.data.items():
             X[pos] = val
         fact = implicit.als.AlternatingLeastSquares(factors=factors)
-        fact.fit(item_users=X, show_progress=False)
+        fact.fit(item_users=X.tocoo(), show_progress=False)
         self.fact = fact
 
     def stat(self):
@@ -74,7 +74,7 @@ class Matrix:
 
         Returns
         -------
-        List of annict_id
+        List of (annict_id and score)
         """
         user_items = lil_matrix((1, len(self.rows)))
         for annict_id in likes:
