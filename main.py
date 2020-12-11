@@ -95,7 +95,10 @@ class Recommendation:
     """Recommendation has a Matrix"""
 
     def __init__(
-        self, dataset_path: str, limit_anime: int, limit_user: int,
+        self,
+        dataset_path: str,
+        limit_anime: int,
+        limit_user: int,
     ):
         """init
 
