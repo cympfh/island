@@ -245,8 +245,8 @@ class MixRecommendation:
     def __init__(self):
         """Init child recommenders"""
         self.children = [
-            Recommendation("./dataset/reviews.csv", limit_anime=1, limit_user=4),
-            Recommendation("./dataset/records.csv", limit_anime=1, limit_user=2),
+            Recommendation("./dataset/reviews.csv", limit_anime=5, limit_user=5),
+            Recommendation("./dataset/records.csv", limit_anime=5, limit_user=3),
         ]
 
     def sample_animes(self, n: int) -> List[str]:
