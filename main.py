@@ -330,7 +330,12 @@ async def anime_info(annict_id: str):
     if not recommender.isknown(annict_id):
         raise HTTPException(status_code=404, detail="Item not found")
     relatives_watch = recommender.similar_items(annict_id, 5)
-    relatives_staff = staff_model.similar_items(annict_id, 5)
+    relatives_staff = [
+        (annict_id, score)
+        for (annict_id, score) in staff_model.similar_items(annict_id, 10)
+        if recommender.isknown(annict_id)
+    ][:5]
+
     return {
         "annictId": annict_id,
         "title": recommender.title(annict_id),
