@@ -49,7 +49,7 @@ class Matrix:
         X = lil_matrix((len(self.rows), len(self.cols)))
         for pos, val in self.data.items():
             X[pos] = val
-        fact = implicit.als.AlternatingLeastSquares(factors=factors)
+        fact = implicit.als.AlternatingLeastSquares(factors=factors, iterations=10)
         fact.fit(item_users=X.tocoo(), show_progress=False)
         self.fact = fact
 
@@ -152,7 +152,7 @@ class Recommendation:
             mat.insert(annict_id, user_id, ratevalue)
 
         mat.stat()
-        mat.decomposition(factors=100)
+        mat.decomposition(factors=200)
 
         self.mat = mat
         self.titles = titles
