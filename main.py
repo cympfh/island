@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 from scipy.sparse import lil_matrix
 
+from island.staff.model import StaffModel
+
 
 class Matrix:
     """Matrix-decompositionable"""
@@ -303,6 +305,7 @@ class MixRecommendation:
 
 
 recommender = MixRecommendation()
+staff_model = StaffModel()
 app = FastAPI()
 
 origins = [
@@ -326,18 +329,27 @@ async def anime_info(annict_id: str):
     """Returns Info"""
     if not recommender.isknown(annict_id):
         raise HTTPException(status_code=404, detail="Item not found")
-    relatives = recommender.similar_items(annict_id, 10)
+    relatives_watch = recommender.similar_items(annict_id, 5)
+    relatives_staff = staff_model.similar_items(annict_id, 5)
     return {
         "annictId": annict_id,
         "title": recommender.title(annict_id),
         "image": recommender.image(annict_id),
-        "relatives": [
+        "relatives_watch": [
             {
                 "annictId": annict_id,
                 "title": recommender.title(annict_id),
                 "score": float(score),
             }
-            for annict_id, score in relatives
+            for annict_id, score in relatives_watch
+        ],
+        "relatives_staff": [
+            {
+                "annictId": annict_id,
+                "title": recommender.title(annict_id),
+                "score": float(score),
+            }
+            for annict_id, score in relatives_staff
         ],
     }
 

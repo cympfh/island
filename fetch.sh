@@ -59,6 +59,22 @@ fetch-works() {
     done
 }
 
+fetch-staffs() {
+    : > dataset/staffs.csv
+    TMP=$(mktemp)
+    for page in $(seq 1 10000); do
+        echo "Staffs: Page $page"
+        get "/v1/staffs?access_token=${TOKEN}&page=${page}&per_page=50&fields=name,work.id" |
+            jq -r '.staffs[] | "\(.work.id)\t\(.name)"' > $TMP
+        if [ -s $TMP ]; then
+            cat $TMP >> dataset/staffs.csv
+        else
+            rm $TMP
+            break
+        fi
+    done
+}
+
 case "$1" in
     work* )
         fetch-works
@@ -68,5 +84,8 @@ case "$1" in
         ;;
     record* )
         fetch-records
+        ;;
+    staff* )
+        fetch-staffs
         ;;
 esac

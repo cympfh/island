@@ -11,6 +11,13 @@ server:
 		--use-colors \
 		--host 0.0.0.0 \
 		--port $(PORT) \
+
+dev:
+	OPENBLAS_NUM_THREADS=1 uvicorn main:app \
+		--log-config logging.yml \
+		--use-colors \
+		--host 0.0.0.0 \
+		--port $(PORT) \
 		--reload
 
 dataset: dataset-works dataset-reviews dataset-records
@@ -23,3 +30,6 @@ dataset-reviews:
 
 dataset-records:
 	bash ./fetch.sh records
+
+dataset-staffs:
+	bash ./fetch.sh staffs

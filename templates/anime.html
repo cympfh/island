@@ -60,18 +60,23 @@
               </h2>
 
               <div class="container mt-4">
-                <aside class="menu" v-if="!image">
-                  <p class="menu-label">10 Relatives</p>
+                <aside class="menu">
+                  <p class="menu-label">5 Relatives</p>
                   <ul class="menu-list">
-                    <li v-for="anime in relatives">
+                    <li v-for="anime in relatives_watch">
                       <a v-bind:href="'/anime/' + anime['annictId']">{{ anime["title"] }}</a>
                     </li>
                   </ul>
                 </aside>
-                <aside class="menu" v-else>
-                  <p class="menu-label">5 Relatives</p>
+                <aside class="menu">
+                  <p class="menu-label">
+                    <div class="tags has-addons">
+                      <span class="tag">EXPERIMENTAL</span>
+                      <span class="tag is-success">スタッフが近いアニメ</span>
+                    </div>
+                  </p>
                   <ul class="menu-list">
-                    <li v-for="anime in relatives_short">
+                    <li v-for="anime in relatives_staff">
                       <a v-bind:href="'/anime/' + anime['annictId']">{{ anime["title"] }}</a>
                     </li>
                   </ul>
@@ -101,8 +106,8 @@
           title: "",
           image: "",
           annictId: annict_id,
-          relatives: [],
-          relatives_short: []
+          relatives_watch: [],
+          relatives_staff: [],
         },
         created() {
           fetch(`http://${location.host}/anime/api/info?annict_id=${annict_id}`)
@@ -114,8 +119,8 @@
                 this.image = false;
               }
               this.annictId = json["annictId"];
-              this.relatives = json["relatives"];
-              this.relatives_short = json["relatives"].slice(0, 5);
+              this.relatives_watch = json["relatives_watch"];
+              this.relatives_staff = json["relatives_staff"];
             });
         }
       })
@@ -164,14 +169,19 @@
             .then(root => {
 
               var container = document.getElementById('graph');
+              let relatives = root.relatives_watch.concat(root.relatives_staff);
 
-              for (var neigh_first of root.relatives) {
+              for (var neigh_first of relatives) {
                 if (this.data.nodes.length > 20) break;
                 fetch(`http://${location.host}/anime/api/info?annict_id=${neigh_first.annictId}`)
                   .then(response => response.json())
                   .then(neigh_first => {
+                    if (!neigh_first.relatives_watch) {  // no relatives
+                      return;
+                    }
                     addEdge(root, neigh_first);
-                    for (var neigh_second of neigh_first.relatives.slice(0, degree_second)) {
+                    let relatives_second = neigh_first.relatives_watch.concat(neigh_first.relatives_staff);
+                    for (var neigh_second of relatives_second.slice(0, degree_second)) {
                       addEdge(neigh_first, neigh_second);
                     }
                     network = new vis.Network(container, this.data, this.options);
