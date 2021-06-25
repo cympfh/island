@@ -40,48 +40,37 @@ class PageRank:
         del name2work
         self.graph = graph
 
-    def random_walk(self, start: str, cur: str, n: int) -> str:
-        """ランダムウォークする
+    def ranks(self, cur: str, num: int, depth: int) -> List[Tuple[str, float]]:
+        """cur から高々 depth だけ辿って到達する頂点とその確率を返す
 
         Parameters
         ----------
-        start
-            始点 (work)
         cur
             現在地点
-        n
-            あと何歩歩くか
-        """
-        if n <= 0:
-            return cur
-        if len(self.graph[cur]) == 0 or (n > 1 and random.random() < 0.5):  # restat
-            return self.random_walk(start, start, n - 1)
-        v = random.choice(self.graph[cur])
-        return self.random_walk(start, v, n - 1)
-
-    def ranks(self, work: str, num: int) -> List[Tuple[str, int]]:
-        """work を始点にした近傍頂点のランクを返す
-
-        Parameters
-        ----------
-        work
-            これを始点にする
         num
-            返すアイテム数
-
-        Returns
-        -------
-        (work, rank) の列を返す
-            rank は高いほど近傍アイテム
-            引数の work は除いている
+            上位いくつ欲しいか
+        depth
+            残りどれだけ深く潜るか
         """
-        count = defaultdict(int)
-        for _ in range(num * 40):
-            goal = self.random_walk(work, work, 5)
-            if goal == work:
-                continue
-            count[goal] += 1
-        items = list(count.items())
-        items.sort(key=lambda item: item[1], reverse=True)
-        items = items[:num]
-        return items
+        if depth <= 0 or len(self.graph[cur]) == 0:
+            return [(cur, 1.0)]
+
+        neigh = defaultdict(float)
+        m = len(self.graph[cur])
+        for u in self.graph[cur]:
+            neigh[u] += 1.0 / m
+
+        neigh: List[Tuple[str, float]] = list(neigh.items())
+        neigh.sort(key=lambda item: item[1], reverse=True)
+        neigh = neigh[:num]
+
+        reached = defaultdict(float)
+        for u, p in neigh:
+            reached[u] += p
+            for v, q in self.ranks(u, num, depth - 1):
+                reached[v] += p * q
+        reached = list(reached.items())
+        reached.sort(key=lambda item: item[1], reverse=True)
+        reached = reached[:num]
+
+        return reached

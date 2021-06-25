@@ -21,5 +21,7 @@ class StaffModel:
                 relations.add((work_id, name))
         self.model = PageRank(relations)
 
-    def similar_items(self, annict_id: str, n: int) -> List[Tuple[str, int]]:
-        return self.model.ranks(annict_id, n)
+    def similar_items(self, annict_id: str, num: int) -> List[Tuple[str, float]]:
+        """ここで自分自身を除く"""
+        res = self.model.ranks(annict_id, num + 2, depth=3)
+        return [(u, p) for u, p in res if u != annict_id][:num]
