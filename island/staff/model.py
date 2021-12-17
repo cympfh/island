@@ -23,5 +23,5 @@ class StaffModel:
 
     def similar_items(self, annict_id: str, num: int) -> List[Tuple[str, float]]:
         """ここで自分自身を除く"""
-        res = self.model.ranks(annict_id, num + 2, depth=3)
+        res = self.model.ranks(annict_id, num + 3, depth=3)
         return [(u, p) for u, p in res if u != annict_id][:num]
