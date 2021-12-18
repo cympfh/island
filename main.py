@@ -13,10 +13,6 @@ from scipy.sparse import lil_matrix
 from island.database import RDB, RecordDB, ReviewDB, WorkDB
 from island.staff.model import StaffModel
 
-FORMAT = "%(message)s"
-logging.basicConfig(
-    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
-)
 logger = logging.getLogger("uvicorn")
 
 
