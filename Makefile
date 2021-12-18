@@ -20,16 +20,9 @@ dev:
 		--port $(PORT) \
 		--reload
 
-dataset: dataset-works dataset-reviews dataset-records
-
-dataset-works:
-	bash ./fetch.sh works
-
-dataset-reviews:
-	bash ./fetch.sh reviews
-
-dataset-records:
-	bash ./fetch.sh records
-
-dataset-staffs:
-	bash ./fetch.sh staffs
+dataset:
+	mkdir -p dataset/
+	python ./fetch.py works
+	python ./fetch.py reviews
+	python ./fetch.py records
+	python ./fetch.py staffs

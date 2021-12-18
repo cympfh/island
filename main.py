@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 from scipy.sparse import lil_matrix
 
+from island.database import RDB, RecordDB, ReviewDB, WorkDB
 from island.staff.model import StaffModel
 
 
@@ -22,13 +23,13 @@ class Matrix:
         self.col_id = dict()
         self.data = dict()
 
-    def insert(self, row: str, col: str, val: float):
+    def insert(self, row: int, col: int, val: float):
         """Insert a value
 
         Parameters
         ----------
         row
-            annictId (NOTE: stringified)
+            workId
         col
             userId
         val
@@ -64,24 +65,24 @@ class Matrix:
             f"{len(self.data)} cells have non-zero values (density={len(self.data) / len(self.rows) / len(self.cols)})"
         )
 
-    def recommend(self, likes: List[str], n: int) -> List[Tuple[str, float]]:
+    def recommend(self, likes: List[int], n: int) -> List[Tuple[int, float]]:
         """Run Recommendation
 
         Parameters
         ----------
         likes
-            List of annict_id
+            List of work_id
         n
             num of returns
 
         Returns
         -------
-        List of (annict_id and score)
+        List of (work_id and score)
         """
         user_items = lil_matrix((1, len(self.rows)))
-        for annict_id in likes:
-            if annict_id in self.row_id:
-                i = self.row_id[annict_id]
+        for work_id in likes:
+            if work_id in self.row_id:
+                i = self.row_id[work_id]
                 user_items[(0, i)] = 2.0
         recommend_items = self.fact.recommend(
             0,
@@ -98,7 +99,7 @@ class Recommendation:
 
     def __init__(
         self,
-        dataset_path: str,
+        dataset: RDB,
         limit_anime: int,
         limit_user: int,
     ):
@@ -106,24 +107,23 @@ class Recommendation:
 
         Parameters
         ----------
-        dataset_path
-            File Path of csv(annict_id, user_id, rating)
+        dataset
+            RDB of Record(work_id, user_id, rating)
+            This is reviews or records.
         limit_anime
             sub limit of freq of anime
         limit_user
             sub limit of freq of user
         """
-        titles = dict()  # annictId -> title
-        images = dict()  # annict_id -> ImageUrl
+        titles = dict()  # work_id -> title
+        images = dict()  # work_id -> ImageUrl
 
-        with open("./dataset/works.csv") as f:
-            for line in f:
-                annict_id, image, title = line.strip("\n").split("\t", 2)
-                titles[annict_id] = title
-                images[annict_id] = image
+        for work_id, title, image, _dt in WorkDB():
+            titles[work_id] = title
+            images[work_id] = image
 
-        rows = []  # List of (annict_id, user_id, rating)
-        count_anime = collections.defaultdict(int)  # annict_id -> count
+        rows = []  # List of (work_id, user_id, rating)
+        count_anime = collections.defaultdict(int)  # work_id -> count
         count_user = collections.defaultdict(int)  # user_id -> count
 
         def rate(rating: str) -> float:
@@ -135,23 +135,21 @@ class Recommendation:
                 return 4
             return 0.5
 
-        with open(dataset_path) as f:
-            for line in f:
-                annict_id, user_id, rating = line.strip("\n").split("\t", 2)
-                count_anime[annict_id] += 1
-                count_user[user_id] += 1
-                if rating == "null":
-                    continue
-                rows.append((annict_id, user_id, rate(rating)))
+        for _id, user_id, work_id, rating, _dt in dataset:
+            count_anime[work_id] += 1
+            count_user[user_id] += 1
+            if rating is None:
+                continue
+            rows.append((work_id, user_id, rate(rating)))
 
         mat = Matrix()
 
-        for annict_id, user_id, ratevalue in rows:
-            if count_anime[annict_id] < limit_anime:
+        for work_id, user_id, ratevalue in rows:
+            if count_anime[work_id] < limit_anime:
                 continue
             if count_user[user_id] < limit_user:
                 continue
-            mat.insert(annict_id, user_id, ratevalue)
+            mat.insert(work_id, user_id, ratevalue)
 
         mat.stat()
         mat.decomposition(factors=200)
@@ -161,32 +159,32 @@ class Recommendation:
         self.images = images
         self.test()
 
-    def isknown(self, annict_id: str) -> bool:
+    def isknown(self, work_id: int) -> bool:
         """Known Anime?"""
-        return annict_id in self.mat.row_id
+        return work_id in self.mat.row_id
 
-    def title(self, annict_id: str) -> Optional[str]:
+    def title(self, work_id: int) -> Optional[str]:
         """Anime Title"""
-        return self.titles.get(annict_id, None)
+        return self.titles.get(work_id, None)
 
-    def image(self, annict_id: str) -> str:
+    def image(self, work_id: int) -> str:
         """Anime Image Url"""
-        return self.images.get(annict_id, None)
+        return self.images.get(work_id, None)
 
-    def sample_animes(self, n: int) -> str:
-        """Returns List of random annict_id"""
+    def sample_animes(self, n: int) -> List[int]:
+        """Returns List of random work_id"""
         return random.sample(self.mat.rows, n)
 
-    def similar_items(self, annict_id: str, n: int) -> List[Tuple[str, float]]:
+    def similar_items(self, work_id: int, n: int) -> List[Tuple[int, float]]:
         """Similar animes
 
         Returns
         -------
-        List of (annict_id: str, score: float)
+        List of (work_id: int, score: float)
         """
-        if not self.isknown(annict_id):
+        if not self.isknown(work_id):
             return []
-        i = self.mat.row_id[annict_id]
+        i = self.mat.row_id[work_id]
         similars = self.mat.fact.similar_items(i, n + 1)
         return [
             (self.mat.rows[int(j)], float(score))
@@ -194,9 +192,9 @@ class Recommendation:
             if int(j) != i
         ][:n]
 
-    def __call__(self, likes: List[str], n: int) -> List[Tuple[str, float]]:
-        """Alias"""
-        if not any(self.isknown(annict_id) for annict_id in likes):
+    def __call__(self, likes: List[int], n: int) -> List[Tuple[int, float]]:
+        """Recommend"""
+        if not any(self.isknown(work_id) for work_id in likes):
             return []
         return self.mat.recommend(likes, n)
 
@@ -206,13 +204,13 @@ class Recommendation:
         sample_user_indices = random.sample(list(range(len(self.mat.cols))), 200)
         # collect likes
         likes = collections.defaultdict(list)
-        for (annict_idx, user_idx), rating in self.mat.data.items():
+        for (work_id, user_idx), rating in self.mat.data.items():
             if user_idx not in sample_user_indices:
                 continue
             if rating < 0:
                 continue
-            annict_id = self.mat.rows[annict_idx]
-            likes[user_idx].append(annict_id)
+            work_id = self.mat.rows[work_id]
+            likes[user_idx].append(work_id)
         # testing
         acc1 = 0
         acc5 = 0
@@ -247,64 +245,65 @@ class MixRecommendation:
     def __init__(self):
         """Init child recommenders"""
         self.children = [
-            Recommendation("./dataset/reviews.csv", limit_anime=5, limit_user=5),
-            Recommendation("./dataset/records.csv", limit_anime=5, limit_user=3),
+            Recommendation(ReviewDB(), limit_anime=5, limit_user=5),
+            Recommendation(RecordDB(), limit_anime=5, limit_user=3),
         ]
 
-    def sample_animes(self, n: int) -> List[str]:
-        """Returns List of annict_id"""
+    def sample_animes(self, n: int) -> List[int]:
+        """Returns List of work_id"""
         i = random.randrange(len(self.children))
         return random.sample(self.children[i].mat.rows, n)
 
-    def title(self, annict_id: str) -> Optional[str]:
+    def title(self, work_id: int) -> Optional[str]:
         """anime title"""
         for child in self.children:
-            t = child.title(annict_id)
+            t = child.title(work_id)
             if t:
                 return t
 
-    def image(self, annict_id: str) -> Optional[str]:
+    def image(self, work_id: int) -> Optional[str]:
         """image url"""
         for child in self.children:
-            t = child.image(annict_id)
+            t = child.image(work_id)
             if t:
                 return t
 
-    def __call__(self, likes: List[str], n: int) -> List[Tuple[str, float]]:
+    def __call__(self, likes: List[int], n: int) -> List[Tuple[int, float]]:
         """Mixture of recommend of children"""
         items = sum([child(likes, n) for child in self.children], [])
         items.sort(key=lambda item: item[1], reverse=True)
         used = set()
         ret = []
-        for aid, score in items:
-            if aid in used:
+        for work_id, score in items:
+            if work_id in used:
                 continue
-            used.add(aid)
-            ret.append((aid, score))
+            used.add(work_id)
+            ret.append((work_id, score))
         return ret[:n]
 
-    def isknown(self, annict_id: str) -> bool:
+    def isknown(self, work_id: int) -> bool:
         """is-known by any children"""
         for child in self.children:
-            if child.isknown(annict_id):
+            if child.isknown(work_id):
                 return True
         return False
 
-    def similar_items(self, annict_id: str, n: int) -> List[Tuple[str, float]]:
+    def similar_items(self, work_id: int, n: int) -> List[Tuple[int, float]]:
         """Mixture of similar_items of children"""
-        items = sum([child.similar_items(annict_id, n) for child in self.children], [])
+        items = sum([child.similar_items(work_id, n) for child in self.children], [])
         items.sort(key=lambda item: item[1], reverse=True)
         used = set()
         ret = []
-        for aid, score in items:
-            if aid in used:
+        for work_id, score in items:
+            if work_id in used:
                 continue
-            used.add(aid)
-            ret.append((aid, score))
+            used.add(work_id)
+            ret.append((work_id, score))
         return ret[:n]
 
 
 recommender = MixRecommendation()
+works = recommender.sample_animes(20)
 staff_model = StaffModel()
 app = FastAPI()
 
@@ -325,59 +324,59 @@ app.add_middleware(
 
 
 @app.get("/anime/api/info")
-async def anime_info(annict_id: str):
+async def anime_info(work_id: int):
     """Returns Info"""
-    if not recommender.isknown(annict_id):
+    if not recommender.isknown(work_id):
         raise HTTPException(status_code=404, detail="Item not found")
-    relatives_watch = recommender.similar_items(annict_id, 5)
+    relatives_watch = recommender.similar_items(work_id, 5)
     relatives_staff = [
-        (annict_id, score)
-        for (annict_id, score) in staff_model.similar_items(annict_id, 10)
-        if recommender.isknown(annict_id)
+        (work_id, score)
+        for (work_id, score) in staff_model.similar_items(work_id, 10)
+        if recommender.isknown(work_id)
     ][:5]
 
     return {
-        "annictId": annict_id,
-        "title": recommender.title(annict_id),
-        "image": recommender.image(annict_id),
+        "workId": work_id,
+        "title": recommender.title(work_id),
+        "image": recommender.image(work_id),
         "relatives_watch": [
             {
-                "annictId": annict_id,
-                "title": recommender.title(annict_id),
+                "workId": work_id,
+                "title": recommender.title(work_id),
                 "score": float(score),
             }
-            for annict_id, score in relatives_watch
+            for work_id, score in relatives_watch
         ],
         "relatives_staff": [
             {
-                "annictId": annict_id,
-                "title": recommender.title(annict_id),
+                "workId": work_id,
+                "title": recommender.title(work_id),
                 "score": float(score),
             }
-            for annict_id, score in relatives_staff
+            for work_id, score in relatives_staff
         ],
     }
 
 
 @app.get("/anime/api/recommend")
-async def recommend(likes: List[str] = Query(None)):
+async def recommend(likes: List[int] = Query(None)):
     """Recommendation from user's likes
 
     Parameters
     ----------
     likes
-        List of annictId
+        List of workId
     """
     if likes is None:
-        aids = recommender.sample_animes(20)
+        works = recommender.sample_animes(20)
         return {
             "items": [
                 {
-                    "annictId": aid,
-                    "title": recommender.title(aid),
-                    "image": recommender.image(aid),
+                    "workId": work_id,
+                    "title": recommender.title(work_id),
+                    "image": recommender.image(work_id),
                 }
-                for aid in aids
+                for work_id in works
             ]
         }
 
@@ -385,17 +384,17 @@ async def recommend(likes: List[str] = Query(None)):
     return {
         "items": [
             {
-                "annictId": annict_id,
-                "title": recommender.title(annict_id),
-                "image": recommender.image(annict_id),
+                "workId": work_id,
+                "title": recommender.title(work_id),
+                "image": recommender.image(work_id),
                 "score": float(score),
             }
-            for annict_id, score in recommend_items
+            for work_id, score in recommend_items
         ],
         "source": {
             "likes": [
-                {"annictId": annict_id, "title": recommender.title(annict_id)}
-                for annict_id in likes
+                {"workId": work_id, "title": recommender.title(work_id)}
+                for work_id in likes
             ]
         },
     }
@@ -410,15 +409,15 @@ async def index_recommend():
 
 @app.get("/anime/random", response_class=RedirectResponse)
 async def index_random():
-    """Redirect to Random /anime/{annict_id}"""
-    annict_id = recommender.sample_animes(1)[0]
-    return RedirectResponse(f"/anime/{annict_id}")
+    """Redirect to Random /anime/{work_id}"""
+    work_id = recommender.sample_animes(1)[0]
+    return RedirectResponse(f"/anime/{work_id}")
 
 
-@app.get("/anime/{annict_id}", response_class=HTMLResponse)
-async def index_anime_graph(annict_id: str):
+@app.get("/anime/{work_id}", response_class=HTMLResponse)
+async def index_anime_graph(work_id: int):
     """Index for Each Anime"""
-    if not recommender.isknown(annict_id):
+    if not recommender.isknown(work_id):
         raise HTTPException(status_code=404, detail="Item not found")
     with open("./templates/anime.html", "rt") as f:
         return f.read()

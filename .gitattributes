@@ -1,0 +1,4 @@
+dataset/records.db filter=lfs diff=lfs merge=lfs -text
+dataset/reviews.db filter=lfs diff=lfs merge=lfs -text
+dataset/staffs.db filter=lfs diff=lfs merge=lfs -text
+dataset/works.db filter=lfs diff=lfs merge=lfs -text

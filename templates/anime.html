@@ -54,7 +54,7 @@
 
               <h2 class="subtitle">
                   {{ title }}
-                <a v-bind:href="'https://annict.jp/works/' + annictId" target="_blank">
+                <a v-bind:href="'https://annict.jp/works/' + workId" target="_blank">
                   <i class="fa fa-external-link" aria-hidden="true"></i>
                 </a>
               </h2>
@@ -64,7 +64,7 @@
                   <p class="menu-label">5 Relatives</p>
                   <ul class="menu-list">
                     <li v-for="anime in relatives_watch">
-                      <a v-bind:href="'/anime/' + anime['annictId']">{{ anime["title"] }}</a>
+                      <a v-bind:href="'/anime/' + anime['workId']">{{ anime["title"] }}</a>
                     </li>
                   </ul>
                 </aside>
@@ -77,7 +77,7 @@
                   </p>
                   <ul class="menu-list">
                     <li v-for="anime in relatives_staff">
-                      <a v-bind:href="'/anime/' + anime['annictId']">{{ anime["title"] }}</a>
+                      <a v-bind:href="'/anime/' + anime['workId']">{{ anime["title"] }}</a>
                     </li>
                   </ul>
                 </aside>
@@ -98,19 +98,19 @@
     </div>
 
     <script>
-      var annict_id = location.href.replace(/\?.*/g, '').replace(/#.*/g, '').split('/').pop();
+      var workId = location.href.replace(/\?.*/g, '').replace(/#.*/g, '').split('/').pop();
 
       var gacha = new Vue({
         el: '#gacha',
         data: {
           title: "",
           image: "",
-          annictId: annict_id,
+          workId: workId,
           relatives_watch: [],
           relatives_staff: [],
         },
         created() {
-          fetch(`http://${location.host}/anime/api/info?annict_id=${annict_id}`)
+          fetch(`http://${location.host}/anime/api/info?work_id=${workId}`)
             .then(response => response.json())
             .then(json => {
               this.title = json["title"];
@@ -118,7 +118,7 @@
               if (this.image === "" || this.image == null) {
                 this.image = false;
               }
-              this.annictId = json["annictId"];
+              this.workId = json["workId"];
               this.relatives_watch = json["relatives_watch"];
               this.relatives_staff = json["relatives_staff"];
             });
@@ -147,24 +147,24 @@
         created() {
 
           var addNode = (node) => {
-            if (!this.used_node_ids.has(node.annictId)) {
-              this.used_node_ids.add(node.annictId);
-              this.data.nodes._addItem({id: node.annictId, label: node.title});
+            if (!this.used_node_ids.has(node.workId)) {
+              this.used_node_ids.add(node.workId);
+              this.data.nodes._addItem({id: node.workId, label: node.title});
             }
           }
 
           var addEdge = (u, v) => {
-            if (u.annictId > v.annictId) return addEdge(v, u);
-            var hashkey = (u.annictId | 0) * 99999 + (v.annictId | 0);
+            if (u.workId > v.workId) return addEdge(v, u);
+            var hashkey = (u.workId | 0) * 99999 + (v.workId | 0);
             if (!this.used_edged.has(hashkey)) {
               addNode(u);
               addNode(v);
               this.used_edged.add(hashkey);
-              this.data.edges._addItem({from: u.annictId, to: v.annictId});
+              this.data.edges._addItem({from: u.workId, to: v.workId});
             }
           }
 
-          fetch(`http://${location.host}/anime/api/info?annict_id=${annict_id}`)
+          fetch(`http://${location.host}/anime/api/info?work_id=${workId}`)
             .then(response => response.json())
             .then(root => {
 
@@ -173,7 +173,7 @@
 
               for (var neigh_first of relatives) {
                 if (this.data.nodes.length > 20) break;
-                fetch(`http://${location.host}/anime/api/info?annict_id=${neigh_first.annictId}`)
+                fetch(`http://${location.host}/anime/api/info?work_id=${neigh_first.workId}`)
                   .then(response => response.json())
                   .then(neigh_first => {
                     if (!neigh_first.relatives_watch) {  // no relatives

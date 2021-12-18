@@ -58,7 +58,7 @@
                   <tbody>
                     <tr v-for="anime in sources">
                       <td>
-                        <label v-bind:for="anime.annictId">
+                        <label v-bind:for="anime.workId">
                           {{ anime.title }}
                         </label>
                       </td>
@@ -67,8 +67,8 @@
                         <div class="control">
                           <label class="checkbox" style="color: #ccc">
                             <input type="checkbox"
-                                   v-bind:value="anime.annictId"
-                                   v-bind:id="anime.annictId"
+                                   v-bind:value="anime.workId"
+                                   v-bind:id="anime.workId"
                                    v-on:change="change"
                                    v-model="likes"
                                    />
@@ -99,7 +99,7 @@
                   <tbody>
                     <tr v-for="anime in recommended">
                       <td>
-                        <a v-bind:href="'/anime/' + anime['annictId']">{{ anime.title }}</a>
+                        <a v-bind:href="'/anime/' + anime['workId']">{{ anime.title }}</a>
                       </td>
                       <td>{{ anime.score }}</td>
                     </tr>
@@ -132,7 +132,7 @@
         methods: {
           change: function () {
             for (var id of this.sources) {
-              document.getElementById(id.annictId).parentElement.style.color = '#ccc';
+              document.getElementById(id.workId).parentElement.style.color = '#ccc';
             }
             for (var id of this.likes) {
               document.getElementById(id).parentElement.style.color = '#dd5555';
@@ -141,7 +141,7 @@
               this.recommended = [];
               return;
             }
-            var params = this.likes.map(aid => `likes=${aid}`).join('&');
+            var params = this.likes.map(workId => `likes=${workId}`).join('&');
             fetch(`http://${location.host}/anime/api/recommend?${params}`)
               .then(response => response.json())
               .then(json => {
