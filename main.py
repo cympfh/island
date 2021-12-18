@@ -1,4 +1,5 @@
 import collections
+import logging
 import random
 from typing import List, Optional, Tuple
 
@@ -6,10 +7,17 @@ import implicit
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
+from rich.logging import RichHandler
 from scipy.sparse import lil_matrix
 
 from island.database import RDB, RecordDB, ReviewDB, WorkDB
 from island.staff.model import StaffModel
+
+FORMAT = "%(message)s"
+logging.basicConfig(
+    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
+logger = logging.getLogger("uvicorn")
 
 
 class Matrix:
@@ -58,10 +66,10 @@ class Matrix:
 
     def stat(self):
         """Debug"""
-        print(
+        logger.info(
             f"Size: {len(self.rows)} x {len(self.cols)} = {len(self.rows) * len(self.cols)}"
         )
-        print(
+        logger.info(
             f"{len(self.data)} cells have non-zero values (density={len(self.data) / len(self.rows) / len(self.cols)})"
         )
 
@@ -115,6 +123,8 @@ class Recommendation:
         limit_user
             sub limit of freq of user
         """
+        logger.info("Initializing a Recommender for %s", dataset.table)
+
         titles = dict()  # work_id -> title
         images = dict()  # work_id -> ImageUrl
 
@@ -233,10 +243,10 @@ class Recommendation:
                     acc10 += 1
                 if ans in [pair[0] for pair in pred[:20]]:
                     acc20 += 1
-        print(f"Acc@1 = { acc1 / num }")
-        print(f"Acc@5 = { acc5 / num }")
-        print(f"Acc@10 = { acc10 / num }")
-        print(f"Acc@20 = { acc20 / num }")
+        logger.info(f"Acc@1 = { acc1 / num }")
+        logger.info(f"Acc@5 = { acc5 / num }")
+        logger.info(f"Acc@10 = { acc10 / num }")
+        logger.info(f"Acc@20 = { acc20 / num }")
 
 
 class MixRecommendation:
@@ -305,6 +315,8 @@ class MixRecommendation:
 recommender = MixRecommendation()
 works = recommender.sample_animes(20)
 staff_model = StaffModel()
+
+logger.info("Launching a Web Server")
 app = FastAPI()
 
 origins = [
@@ -321,6 +333,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+logger.info("Ready")
 
 
 @app.get("/anime/api/info")
