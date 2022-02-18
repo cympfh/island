@@ -57,7 +57,7 @@ class Matrix:
         for pos, val in self.data.items():
             X[pos] = val
         fact = implicit.als.AlternatingLeastSquares(factors=factors, iterations=10)
-        fact.fit(item_users=X.tocoo(), show_progress=False)
+        fact.fit(user_items=X.transpose().tocoo(), show_progress=True)
         self.fact = fact
 
     def stat(self):
@@ -88,14 +88,16 @@ class Matrix:
             if work_id in self.row_id:
                 i = self.row_id[work_id]
                 user_items[(0, i)] = 2.0
-        recommend_items = self.fact.recommend(
+        recommend_items, recommend_scores = self.fact.recommend(
             0,
             user_items.tocsr(),
             n,
             filter_already_liked_items=True,
             recalculate_user=True,
         )
-        return [(self.rows[int(i)], float(score)) for i, score in recommend_items]
+        return [
+            (self.rows[int(i)], float(score)) for i, score in zip(recommend_items, recommend_scores)
+        ]
 
 
 class Recommendation:
@@ -191,10 +193,10 @@ class Recommendation:
         if not self.isknown(work_id):
             return []
         i = self.mat.row_id[work_id]
-        similars = self.mat.fact.similar_items(i, n + 1)
+        similars, scores = self.mat.fact.similar_items(i, n + 1)
         return [
             (self.mat.rows[int(j)], float(score))
-            for j, score in similars
+            for j, score in zip(similars, scores)
             if int(j) != i
         ][:n]
 
@@ -402,10 +404,7 @@ async def recommend(likes: List[int] = Query(None)):
             for work_id, score in recommend_items
         ],
         "source": {
-            "likes": [
-                {"workId": work_id, "title": recommender.title(work_id)}
-                for work_id in likes
-            ]
+            "likes": [{"workId": work_id, "title": recommender.title(work_id)} for work_id in likes]
         },
     }
 
