@@ -13,7 +13,7 @@ from scipy.sparse import lil_matrix
 from island.database import RDB, RecordDB, ReviewDB, WorkDB
 from island.staff.model import StaffModel
 
-logger = logging.getLogger("uvicorn")
+logger = logging.getLogger("uvicorn.main")
 
 
 class Matrix:

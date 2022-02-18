@@ -10,6 +10,7 @@ server:
 		--use-colors \
 		--host 0.0.0.0 \
 		--port $(PORT) \
+		--log-config logconf.yaml
 
 dev:
 	OPENBLAS_NUM_THREADS=1 uvicorn main:app \
