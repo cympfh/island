@@ -23,11 +23,11 @@ This may take several hours (for `dataset-records`).
 
 ### Lanch Server
 
-Recommendation Model be fitted at first.
-This may take only several seconds.
+Recommendation Model(s) will be fitted at first.
+This may take several seconds.
 
 ```bash
-pip isntall -r requirements.txt
-make server
+$ poetry install
+$ make server
 ```
 
