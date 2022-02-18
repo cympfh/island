@@ -25,3 +25,6 @@ dataset:
 	python ./fetch.py reviews
 	python ./fetch.py records
 	python ./fetch.py staffs
+
+dataset-stat:
+	bash dataset/stat.sh

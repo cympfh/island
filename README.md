@@ -4,7 +4,7 @@ Anime Recommendation powerd by Annict
 
 ## Requirements
 
-- Python3
+- Python 3.9+
 
 ## Setup
 
@@ -31,3 +31,7 @@ $ poetry install
 $ make server
 ```
 
+## Dataset
+
+Datasets are manged with SQLite3 as `dataset/*.db` and `git-lfs`.
+And We sometimes update them.
